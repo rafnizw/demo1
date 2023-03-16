@@ -1,0 +1,48 @@
+---
+
+- ansible.builtin.set_fact:
+    task_name: "PUSH:>"
+    option_push: tar.gz
+
+
+
+## PUSH aarch64
+#==========================================================================================
+#- block:
+#  - name: "{{task_name}} Push new docker image: {{db.aarch64.alpine.image_name}}.{{version_build_aarch64}}"
+#    ansible.builtin.shell: 
+#      cmd: docker push {{db.aarch64.alpine.image_name}}.{{version_build_aarch64}}
+#    register: result
+  
+
+#  - name: "{{task_name}} SET: status_push_aarch64_version" 
+#    ansible.builtin.set_fact:
+#      status_push_aarch64_version: "{{'present' if result.failed is false and result.rc == 0 else 'absent' }}"
+
+
+#  - name: "{{task_name}} Push new docker image: {{db.aarch64.alpine.image_name}}.latest"
+#    ansible.builtin.shell: 
+#      cmd: docker push {{db.aarch64.alpine.image_name}}.latest
+#    register: result
+
+
+#  - name: "{{task_name}} SET: status_push_aarch64_latest" 
+#    ansible.builtin.set_fact:
+#      status_push_aarch64_latest: "{{'present' if result.failed is false and result.rc == 0 else 'absent' }}"
+
+#  when: >
+#    ( db.aarch64.alpine and db.aarch64.alpine.version.alpine < version_new_aarch64 or db.aarch64.alpine.version.python < version_python and option_push == 'push')
+
+
+
+## Export to tar.gz
+#==========================================================================================
+- block:
+  
+  - name: "{{task_name}} Export new build to tar.gz"
+    ansible.builtin.shell:
+      cmd: "{{db.runtime}} save {{db.aarch64.alpine.image_name}}.{{version_build_aarch64}} | gzip > {{dir_build}}/{{db.aarch64.alpine.tar_gz}}:{{version_build_aarch64}}.tar.gz"
+  when: >
+    ( db.aarch64.alpine and db.aarch64.alpine.version.alpine < version_new_aarch64 or db.aarch64.alpine.version.python < version_python and option_push == 'tar.gz')
+
+

@@ -1,0 +1,19 @@
+---
+# Test playbook for image-check
+
+- name: "PLAY TEST"
+  hosts: rocky
+  gather_facts: no
+
+  roles:
+  - role: dev/build-image
+    vars:
+      # REQUIED: 
+      configuration_file: cfg.yml
+#        configuration: cfg.yml
+#        config: cfg.yml
+      # OPTIONAL
+      runtime:
+      option:
+
+

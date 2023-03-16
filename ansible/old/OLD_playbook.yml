@@ -1,0 +1,69 @@
+---
+# This playbook is used to build or update unbound docker image
+# All related configuration is placed in the file config.yml
+
+##
+# ToDo List:
+#==========================
+#- ToDo: Create pre.task and verify, connection, required packages, runtime
+
+
+
+- name: "MAIN:> Alpine Linux base image"
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    task_name: "MAIN:>"
+    yml_db: ./cfg/db.yml 
+    yml_check: ./task/check.yml
+    yml_build: ./task/build.yml
+    yml_push: ./task/push.yml
+    yml_update: ./task/update.yml
+    dir_template: ./template
+    dir_build: ../build
+    dir_tmp: ../tmp
+    dir_minirootfs: "{{dir_tmp}}/minirootfs"       
+               
+
+  tasks:
+
+  - name: TMP task
+    ansible.builtin.shell: 
+      cmd: docker image rm rafnizp/lab:alpine.0.1.2
+    ignore_errors: yes
+
+  - name: TMP task
+    ansible.builtin.shell: 
+      cmd: docker image rm rafnizp/lab:alpine.latest
+    ignore_errors: yes
+
+
+  - name: "MAIN:> Include: {{yml_check}}"
+    ansible.builtin.include_tasks:
+      file: "{{yml_check}}"
+
+
+  - name: "MAIN:> Include: {{yml_build}}"
+    ansible.builtin.include_tasks:
+      file: "{{yml_build}}"
+    when: >
+      (db.aarch64.alpine.version.alpine < version_new_aarch64 or db.aarch64.alpine.version.python < version_new_python ) 
+
+
+  - name: "MAIN:> Include: {{yml_push}}"
+    ansible.builtin.include_tasks:
+      file: "{{yml_push}}"
+    when: >
+      (db.aarch64.alpine.version.alpine < version_new_aarch64 and status_image_version_aarch64 == 'present' and status_image_latest_aarch64 == 'present' or 
+       db.aarch64.alpine.version.python < version_python and status_image_version_aarch64 == 'present' and status_image_latest_aarch64 == 'present')
+
+
+#  - name: "MAIN:> Include: {{yml_update}}"
+#    ansible.builtin.include_tasks:
+#      file: "{{yml_update}}"
+#    when: >
+#      (status_push_aarch64_version == 'present' and status_push_aarch64_latest == 'present') 
+
+

@@ -1,0 +1,38 @@
+- hosts: localhost 
+  gather_facts: no
+  become: yes
+  vars:
+    app_version: 7.0.2
+    os_version: 7.0.3
+
+  tasks:
+
+  - name: Import cfg
+    ansible.builtin.include_vars:
+      file: cfg.yml
+
+ # - name: DOES NOT WORK It adds at the end of file
+ #   lineinfile:
+ #     path: cfg.yml
+ #     regexp: '^app:\s*version:.*$'
+ #     line: 'app:\n  version: 7.0.2'
+
+# THIS WORKS 
+#  - name: Update app version
+#    lineinfile:
+#      path: cfg.yml
+#      regexp: '^(\s*)version:(\s*)7\.0\.1(\s*)$'
+#      line: '  version: 7.0.2'
+
+
+  - name: Update app version with new_version variable
+    lineinfile:
+      path: cfg.yml
+      regexp: '^(\s*)version:(\s*){{ app.version }}(\s*)$'
+      line: '  version: {{ app_version }}'
+
+  - name: Update app version with new_version variable
+    lineinfile:
+      path: cfg.yml
+      regexp: '^(\s*)version:(\s*){{ image.version }}(\s*)$'
+      line: '  version: {{ os_version }}'

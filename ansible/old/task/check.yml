@@ -1,0 +1,98 @@
+---
+- ansible.builtin.set_fact:
+    task_name: "CHECK:>"
+    dict_version_new:
+
+- name: "{{task_name}} Include: {{yml_db}}"
+  ansible.builtin.include_vars:
+    file: "{{yml_db}}"
+    name: db
+
+- name: "{{task_name}} Include: {{yml_db}}"
+  ansible.builtin.include_vars:
+    file: "{{yml_db}}"
+    name: db_backup
+
+- name: "{{task_name}} Delete content & directory of {{dir_minirootfs}}"
+  file:
+    state: absent
+    path: "{{dir_minirootfs}}"
+
+- name: "{{task_name}} Create a directory if it does not exist {{dir_minirootfs}}"
+  ansible.builtin.file:
+    path: "{{dir_minirootfs}}"
+    state: directory
+#    mode: '0777'
+#  become: yes
+
+- name: "{{task_name}} Create a directory if it does not exist {{dir_build}}"
+  ansible.builtin.file:
+    path: "{{dir_build}}"
+    state: directory
+
+- name: "{{task_name}} Create a directory if it does not exist {{dir_tmp}}"
+  ansible.builtin.file:
+    path: "{{dir_tmp}}"
+    state: directory
+
+
+
+## Architecture aarch64
+#==========================================================================================
+- block:
+#  - name: "{{task_name}} Check if new version of alpine-minirootfs aarch64 is available"
+#    ansible.builtin.raw: |
+#      curl -k {{db.aarch64.alpine.url.base}} \
+#        | grep alpine-minirootfs \
+#        | sort -r \
+#        | cut -d "-" -f 3 \
+#        | head -n1
+#    register: result
+
+  - name: "{{task_name}} Check if new version of alpine-minirootfs aarch64 is available"
+    ansible.builtin.raw: |
+      curl {{db.aarch64.alpine.url.latest_releases}} \
+        | grep "Mini root filesystem" -A 16 \
+        | grep version \
+        | cut -d ":" -f2 \ 
+        | sed 's/ //g'
+    register: result
+
+  - debug:
+      var: result
+
+  - name: "{{task_name}} SET: version_new_aarch64 " 
+    ansible.builtin.set_fact:
+      version_new_aarch64: "{{result.stdout | regex_replace('(\\n)','') }}"
+      status_last_check: "{{ansible_date_time.date}}<:>{{ansible_date_time.time}}"
+    when: result.failed is false
+
+
+  - name: "{{task_name}} Check if new version of python3 is available"
+    ansible.builtin.raw: |
+      curl -k {{db.aarch64.alpine.url.package}} \
+        | grep python3 \
+        | cut -d "-" -f 2 \
+        | sort \
+        | head -n1
+    register: result
+
+  - debug:
+      var: result
+
+  - name: "{{task_name}} SET: version_new_python " 
+    ansible.builtin.set_fact:
+      version_new_python: "{{result.stdout | regex_replace('(\\n)','') }}"
+
+
+  - name: "{{task_name}} Downlod alpine-minirootfs if new version is available"
+    ansible.builtin.get_url:
+      url: "{{db.aarch64.alpine.url.base}}alpine-minirootfs-{{version_new_aarch64}}-{{db.aarch64.alpine.url.file}}"
+      dest: "{{dir_minirootfs}}/alpine-minirootfs-{{version_new_aarch64}}-{{db.aarch64.alpine.url.file}}"
+      checksum: sha512:{{db.aarch64.alpine.url.base}}alpine-minirootfs-{{version_new_aarch64}}-{{db.aarch64.alpine.url.sha512}}
+    when: >
+      ( db.aarch64.alpine.version.alpine < version_new_aarch64 ) or
+      ( db.aarch64.alpine.version.python < version_new_python )
+    register: result
+  
+  when: db.aarch64.alpine 

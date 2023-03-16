@@ -1,0 +1,65 @@
+
+
+# Main options:
+architecture: aarch64
+
+
+# List of templates
+template:
+  dockerfile: dockerfile.j2
+
+ 
+image:
+  type: image
+#  source: https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/
+#  source: docker.io/library/alpine
+#  source: localhost/demo
+  source: registry.vm:5000/alpine
+#  yml: latest-releases.yaml
+#  tarfile: alpine-minirootfs-3.17.2-aarch64.tar.gz  
+#  tarfile: alpine-minirootfs-3.17.2-aarch64.tar.gz
+#  checksum: ba7aa62f99bf5b93163ff7ca42faff708b01b0bf5be0ea8f51ca242770d3ea8657e9853de8c8861e781cfbfadf49e0ccc98e36842085716230bd35cb408dd788
+#  tag: registry.vm/alpine
+  tag: registry.vm:5000/registry
+#  version: 3.15.1
+  version: 14.0.1
+  build: 0.0.1
+  status: update-required
+#  env:                                         # Custom ENV from container for exapmpe app name  < PAUSED
+#    app1: ENV_APP_NAME
+
+
+app:
+  name: registry 
+  version: 7.0.1
+  package:
+  - name: registry
+    varsion: 0.0.0
+  - name: nano
+    version: 0.0.1
+
+
+
+
+
+# OLD
+#------------------
+#aarch64:
+#  alpine:
+#    tar_gz: registry.niznik.f5.alpine.base
+#    image_name: registry.niznik.f5/alpine/base
+#    status:
+#        last_check: 2022-05-08<:>20:30:22
+#    template: aarch64.tpl
+#    url:
+#        latest_releases: https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/latest-releases.yaml
+#        base: https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/
+#        file: aarch64.tar.gz
+#        package: https://dl-cdn.alpinelinux.org/alpine/latest-stable/main/aarch64/
+#        sha512: aarch64.tar.gz.sha512
+#    version:
+#        alpine: 3.15.4
+#        build: 0.0.0
+#        python: 3.9.7
+
+#runtime: podman

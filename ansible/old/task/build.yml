@@ -1,0 +1,120 @@
+---
+
+- ansible.builtin.set_fact:
+    task_name: "BUILD:>"
+
+
+## BUILD aarch64
+#==========================================================================================
+- block:
+  - name: "{{task_name}} User-Input <version_build_aarch64>"
+    pause:
+      prompt: |
+
+               Summary:
+               ====================================================================================
+               Last check:                   | {{db.aarch64.alpine.status.last_check}} 
+
+               Current Alpine Version:       | {{db.aarch64.alpine.version.alpine}}
+               NEW Alpine Version:           | {{version_new_aarch64}}
+               Update status:                | {{'OS update is required!' if db.aarch64.alpine.version.alpine < version_new_aarch64 else 'OS is updated'}}
+
+               Current Python version:       | {{db.aarch64.alpine.version.python}}
+               NEW Python version:           | {{version_new_python}}
+               Update status:                | {{'Python update is required!' if db.aarch64.alpine.version.python > version_new_python else 'Python is updated'}}
+
+               Image Build version:          | {{db.aarch64.alpine.version.build}}
+
+               Next Step:
+               ====================================================================================
+               ENTER New build version to continue (current is: {{db.aarch64.alpine.version.build}})
+    register: result
+
+
+  - name: "{{task_name}} SET: version_build_aarch64" 
+    set_fact:
+      version_build_aarch64: "{{ result.user_input }}"
+    when: result is not skipped
+    failed_when: db.aarch64.alpine.version.build > result.user_input
+
+
+  - name: "{{task_name}} SET: version_python_new as version_python and version_python as db.aarch64.alpine.version.python" 
+    ansible.builtin.set_fact:
+      version_python: "{{db.aarch64.alpine.version.python}}"
+
+
+  - name: "{{task_name}} PRE-BUILD dockerfile from template {{db.aarch64.alpine.template}}"
+    ansible.builtin.template:
+      src: "{{dir_template}}/{{db.aarch64.alpine.template}}"
+      dest: "{{dir_tmp}}/pre-build.dockerfile.alpine.aarch64"
+    register: result
+
+  
+  - name: "{{task_name}} PRE-BUILD Alpine Linux image as: tmp/alpine:aarch64"
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} build . -f {{dir_tmp}}/pre-build.dockerfile.alpine.aarch64 -t tmp/alpine:aarch64"
+      chdir: "{{dir_tmp}}"
+
+  
+  - name: "{{task_name}} Test python version inside of pre-build image: tmp/alpine:aarch64"
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} run --rm tmp/alpine:aarch64 python --version | cut -d ' ' -f2"
+    register: result
+
+  
+  - name: "{{task_name}} SET: version_python"
+    set_fact:
+      version_python: "{{ result.stdout if db.aarch64.alpine.version.python > result.stdout else db.aarch64.alpine.version.python }}" 
+
+
+  - name: "{{task_name}} Delete PRE-BUILD Alpine Linux image: tmp/alpine:aarch64"
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} image rm -f tmp/alpine:aarch64"
+
+
+  - name: "{{task_name}} Prepare final dockerfile from template {{db.aarch64.alpine.template}}"
+    ansible.builtin.template:
+      src: "{{dir_template}}/{{db.aarch64.alpine.template}}"
+      dest: "{{dir_tmp}}/dockerfile.alpine.aarch64"
+    register: result
+
+
+  - name: "{{task_name}} Build new Alpine Linux image version: {{version_new_aarch64}} build: {{version_build_aarch64}} "
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} build . -f {{dir_tmp}}/dockerfile.alpine.aarch64 -t {{db.aarch64.alpine.image_name}}:{{version_build_aarch64}}"
+      chdir: "{{dir_tmp}}"
+    register: result
+
+
+  - name: "{{task_name}} Tag image {{db.aarch64.alpine.image_name}}:{{version_build_aarch64}} as {{db.aarch64.alpine.image_name}}:latest"
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} tag {{db.aarch64.alpine.image_name}}:{{version_build_aarch64}} {{db.aarch64.alpine.image_name}}:latest"
+      chdir: "{{dir_tmp}}"
+    register: result
+
+
+  - name: "{{task_name}} Test new image: {{db.aarch64.alpine.image_name}}:{{version_build_aarch64}} "
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} run --rm {{db.aarch64.alpine.image_name}}:{{version_build_aarch64}} echo 'OK'" 
+    register: result
+  
+
+  - name: "{{task_name}} SET: status_image_version_aarch64"
+    set_fact:
+      status_image_version_aarch64: "{{'present' if result.stdout == 'OK' else 'absent' }}" 
+
+
+  - name: "{{task_name}} Test new image: {{db.aarch64.alpine.image_name}}:latest "
+    ansible.builtin.shell: 
+      cmd: "{{db.runtime}} run --rm {{db.aarch64.alpine.image_name}}:latest echo 'OK'"
+    register: result
+
+
+  - name: "{{task_name}} SET: status_image_latest_aarch64"
+    set_fact:
+      status_image_latest_aarch64: "{{'present' if result.stdout == 'OK' else 'absent' }}" 
+
+
+  when: 
+    - db.aarch64.alpine
+    - (db.aarch64.alpine.version.alpine < version_new_aarch64 or db.aarch64.alpine.version.python < version_new_python ) 

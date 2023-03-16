@@ -1,0 +1,100 @@
+---
+
+- ansible.builtin.set_fact:
+    task_name: "UPDATE:>"
+
+
+## Delete everythig in build directory
+#==========================================================================================
+- name: "{{task_name}} Delete content & directory of {{dir_tmp}}"
+  file:
+    state: absent
+    path: "{{dir_tmp}}"
+  register: result
+
+
+
+## Update aarch64 DB variables
+#==========================================================================================
+- block:
+
+  - name: "{{task_name}} PRE-SET db.aarch64.alpine.version.build in db"
+    ansible.builtin.set_fact:
+      db: "{{ db|combine({item: _db}) }}"
+    loop: "{{ db.keys()|list }}"
+    vars:
+      _db_build: "{{ version_build_aarch64 if db.aarch64.alpine.version.build < version_build_aarch64 else db.aarch64.alpine.version.build }}"
+      _db_version: "{{ db[item].alpine.version|combine({'build': _db_build}) }}"
+      _db_alpine: "{{ db[item].alpine|combine({'version': _db_version}) }}"
+      _db: "{{ db[item]|combine({'alpine': _db_alpine}) }}"
+
+
+  - name: "{{task_name}} PRE-SET db.aarch64.alpine.version.alpine in db"
+    ansible.builtin.set_fact:
+      db: "{{ db|combine({item: _db}) }}"
+    loop: "{{ db.keys()|list }}"
+    vars:
+      _db_build: "{{ version_new_aarch64 if db.aarch64.alpine.version.alpine < version_new_aarch64 else db.aarch64.alpine.version.alpine }}"
+      _db_version: "{{ db[item].alpine.version|combine({'alpine': _db_build}) }}"
+      _db_alpine: "{{ db[item].alpine|combine({'version': _db_version}) }}"
+      _db: "{{ db[item]|combine({'alpine': _db_alpine}) }}"
+
+
+#  - debug:
+#      msg:
+#        - "version_python                    | {{version_python}}"
+#        - "db.aarch64.alpine.version.python   | {{db.aarch64.alpine.version.python}}"
+#        - "version_new_python                | {{version_new_python}}"
+
+
+
+  - name: "{{task_name}} PRE-SET db.aarch64.alpine.version.python in db"
+    ansible.builtin.set_fact:
+      db: "{{ db|combine({item: _db}) }}"
+    loop: "{{ db.keys()|list }}"
+    vars:
+      _db_python: "{{ version_python if db.aarch64.alpine.version.python > version_python else db.aarch64.alpine.version.python }}"
+      _db_version: "{{ db[item].alpine.version|combine({'python': _db_python}) }}"
+      _db_alpine: "{{ db[item].alpine|combine({'version': _db_version}) }}"
+      _db: "{{ db[item]|combine({'alpine': _db_alpine}) }}"
+
+
+  - name: "{{task_name}} PRE-SET db.aarch64.alpine.status.last_check in db"
+    ansible.builtin.set_fact:
+      db: "{{ db|combine({item: _db}) }}"
+    loop: "{{ db.keys()|list }}"
+    vars:
+      _db_last_check: "{{ status_last_check }}"
+      _db_status: "{{ db[item].alpine.status|combine({'last_check': _db_last_check}) }}"
+      _db_alpine: "{{ db[item].alpine|combine({'status': _db_status}) }}"
+      _db: "{{ db[item]|combine({'alpine': _db_alpine}) }}"
+
+  when: 
+    - db.aarch64.alpine
+
+
+
+## Update DB file  (rewrite with new values)
+#==========================================================================================
+- name: "{{agent_name}}: Update file {{yml_db}} (rewrite with new pre-set data)"
+  ansible.builtin.copy:
+    dest: "{{yml_db}}"
+##    owner: rniznik.share                    # step proper user and make sure user is in the sudoers
+##    group: git                              # step proper group
+    content: |-
+      {% for k,v in db.items() %}
+      {{ k }}:
+        {{ v|to_nice_yaml }}
+      {% endfor %}
+
+- name: "{{task_name}} Include: {{yml_db}}"
+  ansible.builtin.include_vars:
+    file: "{{yml_db}}"
+    name: db_update
+
+
+#- debug:
+#    var: db_backup
+
+#- debug:
+#    var: db_update

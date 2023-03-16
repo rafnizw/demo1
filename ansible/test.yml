@@ -1,0 +1,35 @@
+- name: DEMO 
+  hosts: localhost
+  gather_facts: no
+  
+  vars:
+    user_input: '2'    
+    menu:
+      option:
+      - number: '1'
+        name: "Test 1"                    
+      - number: '2'
+        name: "Test 2"   
+  
+  tasks:
+  - name: Match user_input with option.number
+    set_fact:
+      matched_option: "{{ menu.option | selectattr('number', '==', user_input) | first }}"
+
+  - debug:
+      var: matched_option 
+
+  - name: Debug matched option name
+    debug:
+      msg: "Matched option name is {{ matched_option.name | lower }}"
+    when: matched_option is defined
+
+  - debug:
+      var: result.user_input | type_debug
+
+#  adjust above code as following:
+#  - match user_input with the menu.option.number
+#  - once match is identified in debug display message menu.option.name
+
+
+

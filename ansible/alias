@@ -1,0 +1,1 @@
+alias play="ansible-playbook -i /git/ansible/lab/inventory/development.ini /git/project/image/base/demo/aarch64/clean/ansible/playbook.yml"

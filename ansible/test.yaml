@@ -1,0 +1,32 @@
+- name: "PLAY TEST"
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    file:
+      configg: test
+    supported:
+      file:
+        cfg:
+        - cfg
+        - config
+  tasks:
+  - name: "{{tn}} Verify supported sub-options of [image] from {{playbook_dir}}/{{configuration_file}}"
+    ansible.builtin.assert:
+      that:
+      - file[item] is not none
+      - file[item] is defined
+      - file[item] | length > 0   
+      fail_msg: "FAIL: No match found for {{item}}"
+      success_msg: "SUCCESS: Match found for {{item}}"
+    ignore_errors: yes
+    loop: "{{supported.file.cfg}}"
+    register: result
+
+
+  - name: "Set set_cfg variable"
+    ansible.builtin.set_fact:
+      set_cfg: "{{item.item if item.failed is false else 'absent'}}"
+    with_items: "{{result.results}}"
+
+

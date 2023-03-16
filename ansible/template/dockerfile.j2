@@ -1,0 +1,17 @@
+
+
+# image source
+FROM {{dockerfile.from}}
+
+
+# Enviroment variables
+# ENV ENV_OS_DISTRO      ToDo
+# ENV ENV_APP_NAME       ToDo
+ENV ENV_VERSION_OS={{dockerfile.env.os}}
+ENV ENV_VERSION_BUILD={{dockerfile.env.build}}
+ENV ENV_VERSION_APP={{dockerfile.env.app}}
+
+
+CMD ["/bin/sh"]
+
+

@@ -1,0 +1,39 @@
+---
+# This playbook is used to build or update NLnet Unbound image
+# Based on Alpine version {{version.alpine}} and exported as: {{docker_tag}}
+# All related configuration is placed in the file db.yml
+
+- name: DEMO Alpine Linux aarch64
+  hosts: rocky
+  gather_facts: no
+  
+  vars:
+    # REQUIED: 
+    configuration_file: cfg.yml                    # configuration file which contains only supported options (help.supported_options)
+    # OPTIONAL options
+    tn: "PLAYBOOK:"                                # this taks name
+    runtime:
+    option: 
+      debug: true
+    # HELP Options
+    # help:
+
+  # FOR NOW before include build-role tarbal must be downloaded
+  # Solution is to use tasks
+  # ToDo: create additional tasks in the build-role
+#  pre-tasks:
+
+
+
+  tasks:
+  - name: "{{tn}} Include all data from {{configuration_file}} as 'cfg'"
+    ansible.builtin.include_vars:
+      file: "{{configuration_file}}"
+      name: cfg     #<--(!) This must always be set as cfg
+
+  - name: Include role dev/build-image
+    ansible.builtin.include_role:
+      name: dev/build-image
+
+#  - debug:
+#      var: status
