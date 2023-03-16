@@ -22,8 +22,8 @@ image:
 #  tag: registry.vm/alpine
   tag: registry.vm:5000/registry
 #  version: 3.15.1
-  version: 14.0.2
-  build: 0.0.2
+  version: 14.0.1
+  build: 0.0.1
   status: updated
 #  env:                                         # Custom ENV from container for exapmpe app name  < PAUSED
 #    app1: ENV_APP_NAME
@@ -31,7 +31,7 @@ image:
 
 app:
   name: registry 
-  version: 7.0.2
+  version: 7.0.1
   package:
   - name: registry
     varsion: 7.0.1
